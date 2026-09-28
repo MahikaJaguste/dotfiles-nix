@@ -6,6 +6,8 @@
     defaultEditor = true;
     viAlias = true;
     vimAlias = true;
+    withRuby = true;
+    withPython3 = true;
     extraConfig = ''
       set number
       set relativenumber
