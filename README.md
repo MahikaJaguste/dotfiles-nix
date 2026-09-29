@@ -1,6 +1,6 @@
 # dotfiles-nix
 
-Reproducible development environment managed with [Home Manager](https://github.com/nix/home-manager) and [Nix Flakes](https://nixos.wiki/wiki/Flakes).
+Reproducible development environment managed with [Home Manager](https://github.com/nix-community/home-manager) and [Nix Flakes](https://nixos.wiki/wiki/Flakes).
 
 ## What's Included
 
@@ -30,20 +30,32 @@ cd dotfiles-nix
 
 ### 3. Apply the configuration
 
-**On macOS (Apple Silicon):**
+Each machine has a short name in `flake.nix` (`mj` = this MacBook). Select it
+with `.#<name>`:
+
 ```bash
-nix run nixpkgs#home-manager -- switch --flake .#aarch64-darwin
+nix run nixpkgs#home-manager -- switch --flake .#mj
 ```
 
-**On macOS (Intel):**
-```bash
-nix run nixpkgs#home-manager -- switch --flake .#x86_64-darwin
+To add another machine, add an entry in `flake.nix` with its own platform and
+username:
+
+```nix
+homeConfigurations = {
+  mj = mkHome {
+    system = "aarch64-darwin";
+    username = "mahikajaguste";
+  };
+  # linux-laptop = mkHome {
+  #   system = "x86_64-linux";
+  #   username = "mahika";
+  # };
+};
 ```
 
-**On Linux:**
-```bash
-nix run nixpkgs#home-manager -- switch --flake .#x86_64-linux
-```
+then run `switch --flake .#linux-laptop` on that machine. `home.username` and
+`home.homeDirectory` are set from these values (directories use `/Users` on
+macOS and `/home` on Linux), so `home.nix` itself stays user-agnostic.
 
 ### 4. Start using your environment
 
@@ -56,20 +68,20 @@ tmux         # start tmux
 
 1. Create a new file in `modules/` (e.g., `modules/mytool.nix`)
 2. Add the module to the `imports` list in `home.nix`
-3. Run `home-manager switch --flake .` to apply
+3. Run `nix run nixpkgs#home-manager -- switch --flake .#mj` to apply
 
 ## Updating
 
 ```bash
 nix flake update    # update all dependencies
-home-manager switch --flake .   # apply changes
+nix run nixpkgs#home-manager -- switch --flake .#mj   # apply changes
 ```
 
 ## Repo Structure
 
 ```
 dotfiles-nix/
-├── flake.nix              # Entry point — pins nixpkgs + home-manager
+├── flake.nix              # Entry point — pins nixpkgs + home-manager + per-machine names
 ├── flake.lock             # Lock file — exact versions (commit this)
 ├── home.nix               # Main Home Manager config
 ├── modules/

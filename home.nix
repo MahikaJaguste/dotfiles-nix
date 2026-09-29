@@ -1,12 +1,16 @@
-{ config, pkgs, lib, ... }:
+{ # `username` is supplied per machine by flake.nix.
+  username,
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
   isLinux = pkgs.stdenv.hostPlatform.isLinux;
 in
 {
-  home.username = "mahikajaguste";
-  home.homeDirectory = if isDarwin then "/Users/mahikajaguste" else "/home/mahikajaguste";
   home.stateVersion = "24.05";
 
   imports = [
