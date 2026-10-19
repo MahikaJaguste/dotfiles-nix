@@ -28,6 +28,14 @@
       grep = "rg";
       top = "btop";
     };
+    # Placed before the bash-completion block. bash-completion temporarily
+    # sets LC_ALL= and uses LC_COLLATE; with no LANG set (common on macOS)
+    # Nix bash 5 then warns "setlocale: LC_COLLATE: cannot change locale ()".
+    # A concrete collation avoids the warning without forcing a language.
+    bashrcExtra = ''
+      export LC_COLLATE=C
+    '';
+
     initExtra = ''
       # Prompt with git branch
       parse_git_branch() {

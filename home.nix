@@ -19,6 +19,7 @@ in
     ./modules/bash.nix
     ./modules/lazygit.nix
     ./modules/neovim.nix
+    ./modules/ghostty.nix
   ];
 
   home.packages = with pkgs; [
@@ -36,11 +37,21 @@ in
     unzip
     zip
     git
+
+    # Terminal font with icons for tmux/Catppuccin. Home Manager installs it
+    # into ~/Library/Fonts on macOS and makes it visible to fontconfig on
+    # Linux.
+    nerd-fonts.jetbrains-mono
   ] ++ lib.optionals isDarwin [
     # macOS-specific packages
   ] ++ lib.optionals isLinux [
     # Linux-specific packages
   ];
+
+  fonts.fontconfig = {
+    enable = true;
+    defaultFonts.monospace = [ "JetBrainsMono Nerd Font Mono" ];
+  };
 
   programs.home-manager.enable = true;
 }
