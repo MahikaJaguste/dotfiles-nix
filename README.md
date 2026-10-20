@@ -10,7 +10,7 @@ Reproducible development environment managed with [Home Manager](https://github.
 | **git** | Version control with useful aliases |
 | **bash** | Shell with git-aware prompt, aliases, history |
 | **lazygit** | Terminal UI for git |
-| **neovim** | Text editor with sensible defaults |
+| **neovim** | LazyVim via lazyvim-nix: Nix-managed plugins, LSP servers and tools |
 | **Ghostty** | Cross-platform terminal with truecolor and Catppuccin Mocha |
 | **Nerd Font** | JetBrainsMono Nerd Font Mono for terminal/tmux icons |
 | **ripgrep, fd, fzf, eza, bat, jq, btop** | Modern CLI utilities |
@@ -146,6 +146,66 @@ After editing the tmux config, reload it with `prefix r`; if an already-running
 session still shows wrong colours, detach and reattach (`prefix d`, then `tmux
 attach`) so tmux re-reads the terminal's capabilities.
 
+### Neovim (LazyVim)
+
+Neovim runs [LazyVim](https://www.lazyvim.org) through
+[lazyvim-nix](https://github.com/pfassina/lazyvim-nix), a Home Manager module
+that installs LazyVim's plugin set with Nix and generates `~/.config/nvim` from
+`modules/neovim.nix`. Mason is disabled: LSP servers, formatters and linters
+come from `programs.lazyvim.extraPackages`, so the binaries are pinned by Nix
+instead of downloaded into `~/.local/share/nvim/mason`.
+
+Enabled extras (`programs.lazyvim.extras`):
+
+- `lang.nix` (nil_ls, nixfmt, statix)
+- `lang.python` (pyright, ruff, python3)
+- `lang.typescript` (vtsls)
+- `lang.rust` (rust-analyzer, clippy checks, rustfmt)
+- `lang.json`, `lang.yaml`, `lang.toml`, `lang.markdown`
+- `coding.blink` (blink.cmp completion)
+- Bash is configured by hand in `plugins.bash` (bashls, shfmt, shellcheck)
+
+Useful keys (LazyVim defaults, leader is `Space`):
+
+| Key | Action |
+|-----|--------|
+| `Space Space` | Find files |
+| `Space /` | Live grep |
+| `Space e` | File explorer |
+| `Space gg` | Lazygit |
+| `Space cf` | Format buffer |
+| `Space ca` | Code action |
+| `Space cr` | Rename symbol |
+| `Space xx` | Diagnostics (Trouble) |
+| `Space l` | Lazy (plugin state; versions come from Nix) |
+| `gd` / `gr` / `K` | Definition / references / hover |
+| `]d` / `[d` | Next / previous diagnostic |
+
+To add something, edit `modules/neovim.nix` and apply:
+
+```bash
+nix run nixpkgs#home-manager -- switch --flake .#mj
+```
+
+- **Language:** `extras.lang.<lang>.enable = true;` plus any missing server or
+  formatter in `extraPackages`. Don't use `:LazyExtras` — plugins added there
+  are not installed by Nix.
+- **Tool:** add the package to `extraPackages`; LazyVim's extras already point
+  their LSP/formatter configs at it.
+- **Plugin config:** `plugins.<file> = ''return { { "owner/repo", opts = {...} } }'';`
+  (see `plugins.bash`). Values are plain Lua.
+- **Options/keymaps:** `config.options` and `config.keymaps` (Lua strings).
+
+`~/.config/nvim` is generated from the Nix config — edit `modules/neovim.nix`,
+not those files. Plugin versions follow the `lazyvim` input in `flake.lock`, so
+`nix flake update` plus a switch updates LazyVim and the Nix-managed plugins
+together.
+
+On the first start lazy.nvim itself, `catppuccin` and `friendly-snippets` are
+still fetched by lazy (LazyVim references them, but lazyvim-nix does not map them
+to Nix packages). They land in `~/.local/share/nvim/lazy` and are recorded in
+`~/.config/nvim/lazy-lock.json`; after that Neovim needs no network.
+
 ## Adding a New Tool
 
 1. Create a new file in `modules/` (e.g., `modules/mytool.nix`)
@@ -163,7 +223,7 @@ nix run nixpkgs#home-manager -- switch --flake .#mj   # apply changes
 
 ```
 dotfiles-nix/
-├── flake.nix              # Entry point — pins nixpkgs + home-manager + per-machine names
+├── flake.nix              # Entry point — pins nixpkgs + home-manager + lazyvim + machine names
 ├── flake.lock             # Lock file — exact versions (commit this)
 ├── home.nix               # Main Home Manager config
 ├── modules/
@@ -171,7 +231,7 @@ dotfiles-nix/
 │   ├── git.nix            # git package + config
 │   ├── bash.nix           # bash package + config
 │   ├── lazygit.nix        # lazygit package + config
-│   ├── neovim.nix         # neovim package + config
+│   ├── neovim.nix         # LazyVim via lazyvim-nix: extras, LSP, keymaps
 │   └── ghostty.nix        # Ghostty terminal + Catppuccin Mocha theme
 └── README.md              # This file
 ```
