@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 let
   isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
@@ -10,9 +10,10 @@ let
   # the Nix bash. The wrapper is kept on macOS for clipboard access; the
   # yank plugin also uses it for pbcopy.
   defaultCommand =
-    if isDarwin
-    then "${pkgs.reattach-to-user-namespace}/bin/reattach-to-user-namespace -l ${loginShell}"
-    else loginShell;
+    if isDarwin then
+      "${pkgs.reattach-to-user-namespace}/bin/reattach-to-user-namespace -l ${loginShell}"
+    else
+      loginShell;
 in
 {
   programs.tmux = {
