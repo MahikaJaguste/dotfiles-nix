@@ -97,6 +97,7 @@ managed by Nix. Edit the module, not the file.
 
 ```text
 flake.nix              # inputs
+AGENTS.md              # repo overview for AI agents
 modules/
 ├── flake/             # machines and flake outputs
 │   └── hosts/
@@ -108,7 +109,7 @@ modules/
     ├── terminal/
     ├── editors/
     └── meta/
-.opencode/skills/      # conventions for AI agents
+.opencode/skills/      # agent conventions, recipes and pitfalls
 ```
 
 ## Notes

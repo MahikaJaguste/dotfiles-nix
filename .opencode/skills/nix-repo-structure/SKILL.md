@@ -1,9 +1,9 @@
 ---
-name: Repository Structure
-description: Use when adding, changing, moving, or debugging anything in this repository. Explains the dendritic flake layout (flake-parts + import-tree + Home Manager), where files belong, the conventions to follow, and how to verify a change.
+name: Nix Repository Structure
+description: Use when adding, changing, moving, or debugging anything in this Nix repository. Explains the dendritic flake layout (flake-parts + import-tree + Home Manager), where files belong, the conventions to follow, and how to verify a change.
 ---
 
-# Repository Structure
+# Nix Repository Structure
 
 This repository manages a user's dev environment with Nix, structured
 dendritically: the configuration is split into small, self-registering modules
