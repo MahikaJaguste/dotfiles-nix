@@ -275,6 +275,8 @@ dotfiles-nix/
 │       ├── terminal/ghostty.nix
 │       ├── editors/neovim.nix
 │       └── editors/lazygit.nix
+├── .opencode/skills/
+│   └── dendritic-nix/SKILL.md   # Agent instructions for extending this repo
 └── README.md                    # This file
 ```
 
