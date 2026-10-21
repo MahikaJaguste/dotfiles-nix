@@ -175,6 +175,14 @@ Arbitrary flake outputs go under `flake.<attrpath>`; `flake.homeConfigurations`
 is already owned by `modules/flake/hosts.nix`. Add a formatter or checks the same
 way (`perSystem.formatter`, `perSystem.checks`).
 
+### Configure a Neovim plugin
+
+`programs.lazyvim.plugins.<name>` becomes `~/.config/nvim/lua/plugins/<name>.lua`;
+the string must return a lazy.nvim plugin spec. Setting `opts` on a plugin that
+LazyVim already configures merges with LazyVim's defaults. Example:
+`editors/neovim.nix` sets `snacks.nvim` → `picker.sources.explorer.hidden = true`
+so dotfiles such as `.opencode` show up in the file explorer.
+
 ### Add another module tree (nix-darwin, NixOS)
 
 1. Add the input in `flake.nix`.

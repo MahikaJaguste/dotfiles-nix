@@ -113,6 +113,27 @@ in
       # LazyVim's starter clones lazy.nvim into stdpath("data") on first start;
       # that directory is outside lazyvim-nix's control, so let it happen once.
       plugins = {
+        # snacks.explorer is LazyVim v16's default file explorer; its picker
+        # source hides dotfiles by default. Show them so repo-level config
+        # directories such as .opencode and .github are visible. Gitignored
+        # files stay hidden until you press `I` in the explorer.
+        explorer = ''
+          return {
+            {
+              "folke/snacks.nvim",
+              opts = {
+                picker = {
+                  sources = {
+                    explorer = {
+                      hidden = true,
+                    },
+                  },
+                },
+              },
+            },
+          }
+        '';
+
         bash = ''
           return {
             {
