@@ -16,11 +16,21 @@ Reproducible development environment for macOS and Linux, managed with
 
 ## Set up a new machine
 
-1. Install Nix:
+1. Install Nix. This repo uses [Determinate Nix](https://determinate.systems/nix),
+   which enables flakes and the `nix` command by default:
 
    ```bash
    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
    ```
+
+   If you install plain Nix instead, enable the experimental features first:
+
+   ```bash
+   mkdir -p ~/.config/nix
+   echo 'experimental-features = nix-command flakes' >> ~/.config/nix/nix.conf
+   ```
+
+   Every `nix` command below assumes flakes are enabled.
 
 2. Clone this repo:
 
