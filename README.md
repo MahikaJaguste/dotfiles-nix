@@ -1,6 +1,6 @@
 # dotfiles-nix
 
-Reproducible development environment managed with [Home Manager](https://github.com/nix-community/home-manager) and [Nix Flakes](https://nixos.wiki/wiki/Flakes).
+Reproducible development environment managed with [Home Manager](https://github.com/nix-community/home-manager) and [Nix Flakes](https://nixos.wiki/wiki/Flakes), structured as a [dendritic flake](https://github.com/mightyiam/dendritic): every file in `modules/` is a module, modules are discovered rather than imported, and they talk to each other through options instead of `import`.
 
 ## What's Included
 
@@ -32,32 +32,30 @@ cd dotfiles-nix
 
 ### 3. Apply the configuration
 
-Each machine has a short name in `flake.nix` (`mj` = this MacBook). Select it
-with `.#<name>`:
+Each machine is a small module under `modules/flake/hosts/` (`mj` = this
+MacBook). Select it with `.#<name>`:
 
 ```bash
 nix run nixpkgs#home-manager -- switch --flake .#mj
 ```
 
-To add another machine, add an entry in `flake.nix` with its own platform and
-username:
+To add another machine, create `modules/flake/hosts/linux-laptop.nix`:
 
 ```nix
-homeConfigurations = {
-  mj = mkHome {
-    system = "aarch64-darwin";
-    username = "mahikajaguste";
+{
+  my.hosts.linux-laptop = {
+    system = "x86_64-linux";
+    username = "mahika";
+    profile = "full"; # or "minimal"
   };
-  # linux-laptop = mkHome {
-  #   system = "x86_64-linux";
-  #   username = "mahika";
-  # };
-};
+}
 ```
 
-then run `switch --flake .#linux-laptop` on that machine. `home.username` and
-`home.homeDirectory` are set from these values (directories use `/Users` on
-macOS and `/home` on Linux), so `home.nix` itself stays user-agnostic.
+No edit to `flake.nix` is needed: files in `modules/flake/` are discovered
+automatically. Run `switch --flake .#linux-laptop` on that machine.
+`home.username` and `home.homeDirectory` are set from these values
+(directories use `/Users` on macOS and `/home` on Linux), so the feature
+modules stay user-agnostic.
 
 ### 4. Start using your environment
 
@@ -151,7 +149,7 @@ attach`) so tmux re-reads the terminal's capabilities.
 Neovim runs [LazyVim](https://www.lazyvim.org) through
 [lazyvim-nix](https://github.com/pfassina/lazyvim-nix), a Home Manager module
 that installs LazyVim's plugin set with Nix and generates `~/.config/nvim` from
-`modules/neovim.nix`. Mason is disabled: LSP servers, formatters and linters
+`modules/home/editors/neovim.nix`. Mason is disabled: LSP servers, formatters and linters
 come from `programs.lazyvim.extraPackages`, so the binaries are pinned by Nix
 instead of downloaded into `~/.local/share/nvim/mason`.
 
@@ -181,7 +179,7 @@ Useful keys (LazyVim defaults, leader is `Space`):
 | `gd` / `gr` / `K` | Definition / references / hover             |
 | `]d` / `[d`       | Next / previous diagnostic                  |
 
-To add something, edit `modules/neovim.nix` and apply:
+To add something, edit `modules/home/editors/neovim.nix` and apply:
 
 ```bash
 nix run nixpkgs#home-manager -- switch --flake .#mj
@@ -196,7 +194,7 @@ nix run nixpkgs#home-manager -- switch --flake .#mj
   (see `plugins.bash`). Values are plain Lua.
 - **Options/keymaps:** `config.options` and `config.keymaps` (Lua strings).
 
-`~/.config/nvim` is generated from the Nix config — edit `modules/neovim.nix`,
+`~/.config/nvim` is generated from the Nix config — edit `modules/home/editors/neovim.nix`,
 not those files. Plugin versions follow the `lazyvim` input in `flake.lock`, so
 `nix flake update` plus a switch updates LazyVim and the Nix-managed plugins
 together.
@@ -206,7 +204,7 @@ run it (macOS ships `/usr/bin/vi` and `/usr/bin/vim`, which otherwise win in
 `PATH`).
 
 Markdown files are linted by `markdownlint-cli2` through nvim-lint. The rules
-are generated in `modules/neovim.nix` and passed with `--config`, so no
+are generated in `modules/home/editors/neovim.nix` and passed with `--config`, so no
 per-repo config file is needed: line length (MD013) is disabled and the rest
 stays on, so fenced code blocks need a language tag such as `bash`, `text` or
 `nix`.
@@ -218,9 +216,34 @@ to Nix packages). They land in `~/.local/share/nvim/lazy` and are recorded in
 
 ## Adding a New Tool
 
-1. Create a new file in `modules/` (e.g., `modules/mytool.nix`)
-2. Add the module to the `imports` list in `home.nix`
-3. Run `nix run nixpkgs#home-manager -- switch --flake .#mj` to apply
+Each tool is one self-contained module in `modules/home/`. Files are discovered
+automatically — there is no import list to update.
+
+1. Create `modules/home/<group>/mytool.nix` using the standard shape:
+
+```nix
+{ config, lib, ... }:
+{
+  options.my.mytool.enable = lib.mkEnableOption "mytool";
+
+  config = lib.mkIf config.my.mytool.enable {
+    programs.mytool.enable = true;
+  };
+}
+```
+
+2. Turn it on in `modules/home/profiles.nix` so every host with that profile
+   gets it, or set `my.mytool.enable = true;` in the host's flake module for a
+   single machine.
+3. Apply:
+
+```bash
+nix run nixpkgs#home-manager -- switch --flake .#mj
+```
+
+If the tool needs a value another module also uses (a font name, an editor
+command), declare an option for it — see `modules/home/meta/fonts.nix` — instead
+of hardcoding it or importing the other file.
 
 ## Updating
 
@@ -233,15 +256,39 @@ nix run nixpkgs#home-manager -- switch --flake .#mj   # apply changes
 
 ```text
 dotfiles-nix/
-├── flake.nix              # Entry point — pins nixpkgs + home-manager + lazyvim + machine names
-├── flake.lock             # Lock file — exact versions (commit this)
-├── home.nix               # Main Home Manager config
+├── flake.nix                    # Bootstrap: pins inputs, hands control to modules/flake
+├── flake.lock                   # Exact versions (commit this)
 ├── modules/
-│   ├── tmux.nix           # tmux package + config
-│   ├── git.nix            # git package + config
-│   ├── bash.nix           # bash package + config
-│   ├── lazygit.nix        # lazygit package + config
-│   ├── neovim.nix         # LazyVim via lazyvim-nix: extras, LSP, keymaps
-│   └── ghostty.nix        # Ghostty terminal + Catppuccin Mocha theme
-└── README.md              # This file
+│   ├── flake/                   # Flake-level modules (flake-parts)
+│   │   ├── systems.nix          # Systems to evaluate
+│   │   ├── hosts.nix            # my.hosts -> homeConfigurations
+│   │   └── hosts/
+│   │       └── mj.nix           # This MacBook: system, username, profile
+│   └── home/                    # Home Manager modules (all auto-imported)
+│       ├── base.nix             # stateVersion, home-manager.enable
+│       ├── profiles.nix         # Profile -> feature flags
+│       ├── meta/fonts.nix       # my.font.mono + Nerd Font install
+│       ├── shell/bash.nix
+│       ├── dev/git.nix
+│       ├── dev/cli-tools.nix
+│       ├── terminal/tmux.nix
+│       ├── terminal/ghostty.nix
+│       ├── editors/neovim.nix
+│       └── editors/lazygit.nix
+└── README.md                    # This file
 ```
+
+### How the wiring works
+
+- `flake.nix` calls `flake-parts.lib.mkFlake` with `import-tree ./modules/flake`.
+  Every file under `modules/flake/` is therefore a flake module, and none of
+  them are listed by hand.
+- `modules/flake/hosts.nix` defines the `my.hosts` option and maps each host to
+  a `homeManagerConfiguration`. Each configuration imports
+  `import-tree ../home`, so every file under `modules/home/` is a Home Manager
+  module.
+- Each feature gates itself behind `my.<feature>.enable`.
+  `modules/home/profiles.nix` decides which features a profile enables.
+- Directory names are documentation: discovery is recursive, so moving a file
+  between groups never changes behaviour. Pure helper code that is not a module
+  belongs in a top-level `lib/`, never in `modules/`.
