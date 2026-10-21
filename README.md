@@ -4,16 +4,16 @@ Reproducible development environment managed with [Home Manager](https://github.
 
 ## What's Included
 
-| Tool | Description |
-|------|-------------|
-| **tmux** | Terminal multiplexer with vi mode, mouse, sensible splits |
-| **git** | Version control with useful aliases |
-| **bash** | Shell with git-aware prompt, aliases, history |
-| **lazygit** | Terminal UI for git |
-| **neovim** | LazyVim via lazyvim-nix: Nix-managed plugins, LSP servers and tools |
-| **Ghostty** | Cross-platform terminal with truecolor and Catppuccin Mocha |
-| **Nerd Font** | JetBrainsMono Nerd Font Mono for terminal/tmux icons |
-| **ripgrep, fd, fzf, eza, bat, jq, btop** | Modern CLI utilities |
+| Tool                                     | Description                                                 |
+| ---------------------------------------- | ----------------------------------------------------------- |
+| **tmux**                                 | Terminal multiplexer with vi mode, mouse, sensible splits   |
+| **git**                                  | Version control with useful aliases                         |
+| **bash**                                 | Shell with git-aware prompt, aliases, history               |
+| **lazygit**                              | Terminal UI for git                                         |
+| **neovim**                               | LazyVim via lazyvim-nix: Nix-managed plugins, LSP servers   |
+| **Ghostty**                              | Cross-platform terminal with truecolor and Catppuccin Mocha |
+| **Nerd Font**                            | JetBrainsMono Nerd Font Mono for terminal/tmux icons        |
+| **ripgrep, fd, fzf, eza, bat, jq, btop** | Modern CLI utilities                                        |
 
 ## Bootstrap on a New Machine
 
@@ -111,8 +111,8 @@ On Linux, bash is normally already new enough; if not, install bash 5 and set
 it as your login shell the same way.
 
 If Terminal.app still opens `/bin/bash` after this, its own profile is
-overriding the login shell. Change *Settings → Profiles → [your profile] →
-Shell* to use the login shell (or set the command to
+overriding the login shell. Change _Settings → Profiles → [your profile] →
+Shell_ to use the login shell (or set the command to
 `/Users/<you>/.nix-profile/bin/bash`). From the command line, after quitting
 Terminal:
 
@@ -167,19 +167,19 @@ Enabled extras (`programs.lazyvim.extras`):
 
 Useful keys (LazyVim defaults, leader is `Space`):
 
-| Key | Action |
-|-----|--------|
-| `Space Space` | Find files |
-| `Space /` | Live grep |
-| `Space e` | File explorer |
-| `Space gg` | Lazygit |
-| `Space cf` | Format buffer |
-| `Space ca` | Code action |
-| `Space cr` | Rename symbol |
-| `Space xx` | Diagnostics (Trouble) |
-| `Space l` | Lazy (plugin state; versions come from Nix) |
-| `gd` / `gr` / `K` | Definition / references / hover |
-| `]d` / `[d` | Next / previous diagnostic |
+| Key               | Action                                      |
+| ----------------- | ------------------------------------------- |
+| `Space Space`     | Find files                                  |
+| `Space /`         | Live grep                                   |
+| `Space e`         | File explorer                               |
+| `Space gg`        | Lazygit                                     |
+| `Space cf`        | Format buffer                               |
+| `Space ca`        | Code action                                 |
+| `Space cr`        | Rename symbol                               |
+| `Space xx`        | Diagnostics (Trouble)                       |
+| `Space l`         | Lazy (plugin state; versions come from Nix) |
+| `gd` / `gr` / `K` | Definition / references / hover             |
+| `]d` / `[d`       | Next / previous diagnostic                  |
 
 To add something, edit `modules/neovim.nix` and apply:
 
@@ -201,6 +201,16 @@ not those files. Plugin versions follow the `lazyvim` input in `flake.lock`, so
 `nix flake update` plus a switch updates LazyVim and the Nix-managed plugins
 together.
 
+`EDITOR` and `VISUAL` point at `nvim`, and the bash aliases `vi` and `vim` also
+run it (macOS ships `/usr/bin/vi` and `/usr/bin/vim`, which otherwise win in
+`PATH`).
+
+Markdown files are linted by `markdownlint-cli2` through nvim-lint. The rules
+are generated in `modules/neovim.nix` and passed with `--config`, so no
+per-repo config file is needed: line length (MD013) is disabled and the rest
+stays on, so fenced code blocks need a language tag such as `bash`, `text` or
+`nix`.
+
 On the first start lazy.nvim itself, `catppuccin` and `friendly-snippets` are
 still fetched by lazy (LazyVim references them, but lazyvim-nix does not map them
 to Nix packages). They land in `~/.local/share/nvim/lazy` and are recorded in
@@ -221,7 +231,7 @@ nix run nixpkgs#home-manager -- switch --flake .#mj   # apply changes
 
 ## Repo Structure
 
-```
+```text
 dotfiles-nix/
 ├── flake.nix              # Entry point — pins nixpkgs + home-manager + lazyvim + machine names
 ├── flake.lock             # Lock file — exact versions (commit this)

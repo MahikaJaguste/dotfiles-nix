@@ -1,12 +1,22 @@
 { pkgs, lazyvim, ... }:
 
+let
+  # markdownlint rule set used by nvim-lint and conform (via --config), so the
+  # rules live here instead of a .markdownlint-cli2.jsonc in every repo.
+  markdownlintConfig = pkgs.writeText "markdownlint-cli2.json" (
+    builtins.toJSON {
+      config = {
+        # 80 columns conflicts with tables and long links; the rest stays on.
+        MD013 = false;
+      };
+    }
+  );
+in
 {
   imports = [ lazyvim.homeManagerModules.default ];
 
   programs.neovim = {
     defaultEditor = true;
-    viAlias = true;
-    vimAlias = true;
   };
 
   programs.lazyvim = {
@@ -100,36 +110,63 @@
 
     # LazyVim's starter clones lazy.nvim into stdpath("data") on first start;
     # that directory is outside lazyvim-nix's control, so let it happen once.
-    plugins.bash = ''
-      return {
-        {
-          "neovim/nvim-lspconfig",
-          opts = {
-            servers = {
-              bashls = {},
+    plugins = {
+      bash = ''
+        return {
+          {
+            "neovim/nvim-lspconfig",
+            opts = {
+              servers = {
+                bashls = {},
+              },
             },
           },
-        },
-        {
-          "stevearc/conform.nvim",
-          opts = {
-            formatters_by_ft = {
-              bash = { "shfmt" },
-              sh = { "shfmt" },
+          {
+            "stevearc/conform.nvim",
+            opts = {
+              formatters_by_ft = {
+                bash = { "shfmt" },
+                sh = { "shfmt" },
+              },
             },
           },
-        },
-        {
-          "mfussenegger/nvim-lint",
-          opts = {
-            linters_by_ft = {
-              bash = { "shellcheck" },
-              sh = { "shellcheck" },
+          {
+            "mfussenegger/nvim-lint",
+            opts = {
+              linters_by_ft = {
+                bash = { "shellcheck" },
+                sh = { "shellcheck" },
+              },
             },
           },
-        },
-      }
-    '';
+        }
+      '';
+
+      markdown = ''
+        return {
+          {
+            "mfussenegger/nvim-lint",
+            opts = {
+              linters = {
+                ["markdownlint-cli2"] = {
+                  prepend_args = { "--config", "${markdownlintConfig}" },
+                },
+              },
+            },
+          },
+          {
+            "stevearc/conform.nvim",
+            opts = {
+              formatters = {
+                ["markdownlint-cli2"] = {
+                  prepend_args = { "--config", "${markdownlintConfig}" },
+                },
+              },
+            },
+          },
+        }
+      '';
+    };
   };
 
   home.sessionVariables = {

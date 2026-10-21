@@ -1,11 +1,12 @@
-{ config, pkgs, ... }:
-
-{
+_: {
   programs.bash = {
     enable = true;
     historySize = 10000;
     historyFileSize = 20000;
-    historyControl = [ "ignoredups" "ignorespace" ];
+    historyControl = [
+      "ignoredups"
+      "ignorespace"
+    ];
     shellOptions = [
       "histappend"
       "checkwinsize"
@@ -27,6 +28,11 @@
       find = "fd";
       grep = "rg";
       top = "btop";
+      # macOS ships /usr/bin/vi and /usr/bin/vim, which come before the Nix
+      # profile in PATH and shadow programs.neovim's aliases. Send them to
+      # Neovim (LazyVim) explicitly.
+      vi = "nvim";
+      vim = "nvim";
     };
     # Placed before the bash-completion block. bash-completion temporarily
     # sets LC_ALL= and uses LC_COLLATE; with no LANG set (common on macOS)
