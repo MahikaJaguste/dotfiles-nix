@@ -18,12 +18,9 @@ let
       };
 
       modules = [
-        # The LazyVim module is external, so import it explicitly. The home
-        # tree only configures programs.lazyvim when my.neovim.enable is set.
-        inputs.lazyvim.homeManagerModules.default
-
-        # Every file under modules/home is a module; none are listed by hand.
-        (inputs.import-tree ../home)
+        # The exported bundle contains the home tree and its external modules,
+        # so every host uses exactly what another flake would import.
+        config.flake.homeModules.default
 
         # Host identity, injected here so modules/home/ stays user-agnostic.
         ({ pkgs, ... }: {
