@@ -21,7 +21,8 @@ options change; discover the current state with the commands under
 - **`modules/flake/`** is the flake-level module tree (`flake-parts`). It
   declares hosts and any flake outputs (`flake.*`, `perSystem`).
 - **`modules/home/`** is the Home Manager module tree. Every host imports all of
-  it; modules gate themselves on their own options.
+  it, and the same tree is exported as `flake.homeModules.default` so another
+  flake can reuse it without inheriting this flake's hosts.
 - **Discovery replaces imports.** `import-tree` recursively imports every `.nix`
   file under those directories. There is no import list to update.
 - **Directory names are documentation.** Because discovery is recursive, moving
@@ -48,6 +49,12 @@ options change; discover the current state with the commands under
 7. Pure helpers belong in a top-level `lib/`, not in `modules/`.
 8. Refactors must not change behaviour. Verify by building and diffing against
    the active generation.
+9. Defaults that a consuming flake may override use `lib.mkDefault`. Profile
+   flags and shared values such as `home.stateVersion` must not be hard-set.
+10. Import external flake modules at the flake boundary (`modules/flake/`), not
+    from `modules/home/`, when the home tree configures them. Include them in
+    the exported `homeModules.default` bundle. This keeps the home tree free of
+    special-argument requirements and avoids import-time recursion.
 
 ## Module shape
 
@@ -75,8 +82,9 @@ Option naming: `my.<camelCaseFeature>.enable`; nested values use dotted options
 | Which features a machine enables | `modules/home/profiles.nix` |
 | A machine | `modules/flake/hosts/<name>.nix` |
 | A flake output, package, formatter, check | `modules/flake/` |
+| A reusable Home Manager bundle for another flake | `flake.homeModules.default` in `modules/flake/` |
 | A pure helper function | `lib/` (create it) |
-| An external flake module | top-level `imports`, with a comment saying why |
+| An external flake module | `modules/flake/` (host build or exported bundle), top-level `imports`, with a comment saying why |
 
 ## Extending
 
@@ -97,7 +105,19 @@ the file and its enable flag. If it declared options other modules read, move
 those declarations to `meta/` or update the consumers first.
 
 **Input.** Add it to `flake.nix`, lock it, then read `inputs.<name>` in a flake
-module. Home Manager modules also receive all inputs through `extraSpecialArgs`.
+module. Use `extraSpecialArgs` for values, not for external modules: Home
+Manager resolves `imports` before special args. Import an external Home Manager
+module at the flake boundary and include it in the exported bundle.
+
+**Reuse from another flake.** Export the home tree as
+`flake.homeModules.default` from `modules/flake/`. Include external Home
+Manager modules in that bundle so consumers do not need to pass special
+arguments. A consumer imports `inputs.<name>.homeModules.default`, sets
+`my.profile`, and overrides feature flags or `home.stateVersion` with normal
+definitions; those defaults are `lib.mkDefault` here. It must still set
+`home.username` and `home.homeDirectory`. Do not import
+`modules/flake/hosts.nix` from the consumer — that would create this flake's
+personal hosts there.
 
 **New tree (nix-darwin, NixOS).** Create `modules/darwin/` or `modules/nixos/`,
 add a flake module that sets `flake.darwinConfigurations` /
@@ -141,6 +161,13 @@ Apply only when the user asks: `... switch --flake .#<host>`.
 - Do not add Neovim support through `:LazyExtras` or Mason; add a LazyVim extra
   and put the binary in `extraPackages`.
 - Do not bump `home.stateVersion` as part of unrelated work.
+- Hard-setting a feature flag or `home.stateVersion` prevents a consuming flake
+  from overriding it. Use `lib.mkDefault` for defaults.
+- Importing an external Home Manager module from `modules/home` when it needs a
+  special argument causes infinite recursion. Import it in `modules/flake/`.
+- The exported `homeModules.default` must include external modules the home
+  tree configures; otherwise consumers enable a feature whose options are
+  missing.
 - Do not add plaintext secrets; there is no secret-management setup.
 
 ## Orienting
