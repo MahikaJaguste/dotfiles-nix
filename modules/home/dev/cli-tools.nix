@@ -18,6 +18,7 @@
       unzip
       zip
       git
+      gh
     ];
   };
 }
