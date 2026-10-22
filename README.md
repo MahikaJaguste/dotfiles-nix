@@ -11,7 +11,7 @@ Reproducible development environment for macOS and Linux, managed with
 | Terminal | Ghostty, tmux (Catppuccin Mocha), JetBrainsMono Nerd Font     |
 | Editor   | Neovim with LazyVim, Nix-managed plugins and language servers |
 | Shell    | bash with aliases, history and a git-aware prompt             |
-| Git      | git aliases and lazygit                                        |
+| Git      | git, gh, lazygit, aliases and Nix-managed SSH config           |
 | CLI      | ripgrep, fd, fzf, eza, bat, jq, btop                          |
 
 ## Set up a new machine
@@ -48,7 +48,26 @@ Reproducible development environment for macOS and Linux, managed with
    `mj` is this MacBook. Hosts live in `modules/flake/hosts/`; add a file there
    for another machine, then use `.#<name>`.
 
-4. Open a new shell and start working:
+4. Set up GitHub SSH:
+
+   ```bash
+   nix run .#github-ssh
+   ```
+
+   Use a different key or email:
+
+   ```bash
+   nix run .#github-ssh -- --key id_ed25519_work --email work@example.com
+   ```
+
+   For a work account, log in once and pass the account name:
+
+   ```bash
+   gh auth login
+   nix run .#github-ssh -- --key id_ed25519_work --email work@example.com --account work-username
+   ```
+
+5. Open a new shell and start working:
 
    ```bash
    exec bash
@@ -72,14 +91,6 @@ Log out and back in. If Terminal.app ignores this, set its profile to use the
 login shell. A tmux server started before the change keeps the old shell;
 restart it with `tmux kill-server`.
 
-## Daily use
-
-```bash
-tmux                  # start
-tmux attach           # reattach to the last session
-tmux new -A -s main   # attach to "main", creating it if needed
-```
-
 ## Making changes
 
 The configuration is split by area under `modules/home/`; every file is loaded
@@ -100,30 +111,5 @@ nix flake update
 nix run nixpkgs#home-manager -- switch --flake .#mj
 ```
 
-Generated files (`~/.config/nvim`, `~/.config/tmux/tmux.conf`, `~/.bashrc`) are
-managed by Nix. Edit the module, not the file.
-
-## Structure
-
-```text
-flake.nix              # inputs
-AGENTS.md              # repo overview for AI agents
-modules/
-├── flake/             # machines and flake outputs
-│   └── hosts/
-└── home/              # user environment, grouped by area
-    ├── base.nix
-    ├── profiles.nix
-    ├── shell/
-    ├── dev/
-    ├── terminal/
-    ├── editors/
-    └── meta/
-.opencode/skills/      # agent conventions, recipes and pitfalls
-```
-
-## Notes
-
-- Use a truecolor terminal; Ghostty is installed and configured for it.
-- The first Neovim start downloads a few plugins that are not pinned by Nix.
-  After that, Neovim works offline.
+Generated files (`~/.config/nvim`, `~/.config/tmux/tmux.conf`, `~/.bashrc`,
+`~/.ssh/config`) are managed by Nix. Edit the module, not the file.

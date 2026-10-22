@@ -49,5 +49,9 @@ Switch only when the user asks; build and report first.
 - Share data through options, not `import ./other.nix`.
 - Stage new files (`git add`) before evaluating — flakes ignore untracked paths.
 - Do not bump `home.stateVersion` or add plaintext secrets as part of other work.
-- Keep docs honest: README is for humans, the skill is for agents. Neither is an
-  inventory — discover hosts and flags with the commands above.
+- Keep docs honest: README is a short, command-first runbook for humans; the
+  skill is for agents. Neither is an inventory — discover hosts and flags with
+  the commands above.
+- Do not put design rationale, architecture explanations, or troubleshooting
+  prose in README. Keep it to setup and usage steps; explanations belong in
+  module comments or the agent skill.
