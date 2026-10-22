@@ -12,18 +12,18 @@
   config = lib.mkMerge [
     # Every machine gets a shell, git and the CLI toolbox.
     {
-      my.bash.enable = true;
-      my.git.enable = true;
-      my.cliTools.enable = true;
-      my.fonts.enable = true;
+      my.bash.enable = lib.mkDefault true;
+      my.git.enable = lib.mkDefault true;
+      my.cliTools.enable = lib.mkDefault true;
+      my.fonts.enable = lib.mkDefault true;
     }
 
     # Interactive terminal + editor stack.
     (lib.mkIf (config.my.profile == "full") {
-      my.tmux.enable = true;
-      my.ghostty.enable = true;
-      my.neovim.enable = true;
-      my.lazygit.enable = true;
+      my.tmux.enable = lib.mkDefault true;
+      my.ghostty.enable = lib.mkDefault true;
+      my.neovim.enable = lib.mkDefault true;
+      my.lazygit.enable = lib.mkDefault true;
     })
   ];
 }

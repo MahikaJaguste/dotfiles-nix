@@ -1,4 +1,4 @@
-{ config, lib, pkgs, lazyvim, ... }:
+{ config, lib, pkgs, ... }:
 let
   # markdownlint rule set used by nvim-lint and conform (via --config), so the
   # rules live here instead of a .markdownlint-cli2.jsonc in every repo.
@@ -12,8 +12,6 @@ let
   );
 in
 {
-  imports = [ lazyvim.homeManagerModules.default ];
-
   options.my.neovim.enable = lib.mkEnableOption "Neovim with LazyVim";
 
   config = lib.mkIf config.my.neovim.enable {
