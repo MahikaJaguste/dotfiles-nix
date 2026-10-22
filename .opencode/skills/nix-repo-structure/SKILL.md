@@ -20,9 +20,9 @@ options change; discover the current state with the commands under
   `flake-parts`, which discovers everything under `modules/flake/`.
 - **`modules/flake/`** is the flake-level module tree (`flake-parts`). It
   declares hosts and any flake outputs (`flake.*`, `perSystem`).
-- **`modules/home/`** is the Home Manager module tree. Every host imports all of
-  it, and the same tree is exported as `flake.homeModules.default` so another
-  flake can reuse it without inheriting this flake's hosts.
+- **`modules/home/`** is the Home Manager module tree. Every host consumes
+  `flake.homeModules.default`, the same bundle another flake can import, so
+  local hosts and consumers cannot drift.
 - **Discovery replaces imports.** `import-tree` recursively imports every `.nix`
   file under those directories. There is no import list to update.
 - **Directory names are documentation.** Because discovery is recursive, moving
@@ -53,8 +53,9 @@ options change; discover the current state with the commands under
    flags and shared values such as `home.stateVersion` must not be hard-set.
 10. Import external flake modules at the flake boundary (`modules/flake/`), not
     from `modules/home/`, when the home tree configures them. Include them in
-    the exported `homeModules.default` bundle. This keeps the home tree free of
-    special-argument requirements and avoids import-time recursion.
+    the exported `homeModules.default` bundle, and have hosts consume that
+    bundle rather than rebuilding the module list. This keeps the home tree
+    free of special-argument requirements and avoids import-time recursion.
 
 ## Module shape
 
@@ -112,7 +113,8 @@ module at the flake boundary and include it in the exported bundle.
 **Reuse from another flake.** Export the home tree as
 `flake.homeModules.default` from `modules/flake/`. Include external Home
 Manager modules in that bundle so consumers do not need to pass special
-arguments. A consumer imports `inputs.<name>.homeModules.default`, sets
+arguments, and have `mkHome` consume the same bundle. A consumer imports
+`inputs.<name>.homeModules.default`, sets
 `my.profile`, and overrides feature flags or `home.stateVersion` with normal
 definitions; those defaults are `lib.mkDefault` here. It must still set
 `home.username` and `home.homeDirectory`. Do not import
