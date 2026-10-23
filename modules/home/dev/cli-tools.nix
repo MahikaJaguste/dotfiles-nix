@@ -7,7 +7,6 @@
       # Core utilities
       ripgrep
       fd
-      fzf
       eza
       bat
       jq

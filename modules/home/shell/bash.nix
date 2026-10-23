@@ -3,6 +3,13 @@
   options.my.bash.enable = lib.mkEnableOption "bash configuration";
 
   config = lib.mkIf config.my.bash.enable {
+    # Keybindings for the interactive shell: Ctrl-R searches history, Ctrl-T
+    # picks files, Alt-C changes directory.
+    programs.fzf = {
+      enable = true;
+      enableBashIntegration = true;
+    };
+
     programs.bash = {
       enable = true;
       historySize = 10000;
@@ -47,6 +54,16 @@
       '';
 
       initExtra = ''
+        # Timestamps in `history` and in $HISTFILE, so imported/searched
+        # entries can be ordered.
+        HISTTIMEFORMAT='%F %T '
+
+        # `histappend` only writes at exit, so concurrent panes and terminals
+        # do not see each other's commands until then. Flush after each prompt.
+        # Array form preserves hooks other integrations installed (Ghostty and
+        # direnv both use PROMPT_COMMAND); bash 5 runs every element.
+        PROMPT_COMMAND=("history -a" ''${PROMPT_COMMAND[@]})
+
         # Prompt with git branch
         parse_git_branch() {
           git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
