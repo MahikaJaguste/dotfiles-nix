@@ -78,28 +78,40 @@ Option naming: `my.<camelCaseFeature>.enable`; nested values use dotted options
 
 | You are adding | Put it in |
 | --- | --- |
-| A program/tool configuration | `modules/home/<group>/<tool>.nix` |
+| A shell feature (runs inside the session) | `modules/home/shell/<tool>.nix` |
+| A terminal emulator or multiplexer | `modules/home/terminal/<tool>.nix` |
+| An interactive editor | `modules/home/editor/<tool>.nix` |
+| A git workflow tool | `modules/home/git/<tool>.nix` |
+| Packages with no configuration of their own | `modules/home/packages/<name>.nix` |
 | A value used by several modules | an option in `modules/home/meta/` |
 | Which features a machine enables | `modules/home/profiles.nix` |
 | A machine | `modules/flake/hosts/<name>.nix` |
-| A flake output, package, formatter, check | `modules/flake/` |
-| A reusable Home Manager bundle for another flake | `flake.homeModules.default` in `modules/flake/` |
+| A package or app this flake provides | `modules/flake/packages/<name>.nix` |
+| A flake output, formatter, check | `modules/flake/` |
+| A reusable Home Manager bundle for another flake | `flake.homeModules.default` in `modules/flake/home-modules.nix` |
 | A pure helper function | `lib/` (create it) |
 | An external flake module | `modules/flake/` (host build or exported bundle), top-level `imports`, with a comment saying why |
+
+Groups describe **what owns the configuration**, not where a tool happens to be
+used: a tool with a config belongs to the group that owns that config (lazygit
+is a git tool even though it opens Neovim), a bare package set belongs in
+`packages/`, and cross-cutting values belong in `meta/`. Do not create a group
+for a single file; add one only when a family has several.
 
 ## Extending
 
 **Feature or tool.** Create one self-contained file in the matching group
-(create a new group if it helps humans). Enable it in `profiles.nix`, or set
-`my.<feature>.enable = true;` in a single host module. Keep the package and its
-config together.
+(see the table; use an existing group rather than inventing one). Enable it in
+`profiles.nix`, or set `my.<feature>.enable = true;` in a single host module.
+Keep the package and its config together.
 
 **Host.** Add a file under `modules/flake/hosts/` setting
 `my.hosts.<name> = { system; username; profile; }`. No other file changes.
 
 **Profile.** The profile name is declared as an enum in two places: the
-`my.profile` option in `profiles.nix` and the host submodule in `flake/hosts.nix`.
-Update both, then decide the feature flags in `profiles.nix`.
+`my.profile` option in `profiles.nix` and the host submodule in
+`flake/hosts/default.nix`. Update both, then decide the feature flags in
+`profiles.nix`.
 
 **Move or rename.** Just move the file; do not touch imports. **Delete.** Remove
 the file and its enable flag. If it declared options other modules read, move
@@ -118,8 +130,8 @@ arguments, and have `mkHome` consume the same bundle. A consumer imports
 `my.profile`, and overrides feature flags or `home.stateVersion` with normal
 definitions; those defaults are `lib.mkDefault` here. It must still set
 `home.username` and `home.homeDirectory`. Do not import
-`modules/flake/hosts.nix` from the consumer — that would create this flake's
-personal hosts there.
+`modules/flake/hosts/default.nix` from the consumer — that would create this
+flake's personal hosts there.
 
 **New tree (nix-darwin, NixOS).** Create `modules/darwin/` or `modules/nixos/`,
 add a flake module that sets `flake.darwinConfigurations` /

@@ -20,10 +20,12 @@ configuration.
 ## Architecture in one minute
 
 - `flake.nix` declares inputs and hands control to `flake-parts`.
-- `modules/flake/` is the flake-level tree: hosts and flake outputs.
-- `modules/home/` is the Home Manager tree, grouped by area.
+- `modules/flake/` is the flake-level tree: hosts, packages and flake outputs.
+- `modules/home/` is the Home Manager tree, grouped by concern: shell,
+  terminal, editor, git, packages and meta.
 - `import-tree` discovers every `.nix` file. There are no import lists.
-- Hosts live in `modules/flake/hosts/<name>.nix` and pick a profile.
+- Hosts live in `modules/flake/hosts/<name>.nix` and pick a profile; the
+  builder and `my.hosts` option live in `modules/flake/hosts/default.nix`.
 - `modules/home/profiles.nix` maps a profile to `my.<feature>.enable` flags.
 
 Details, recipes and pitfalls: `.opencode/skills/nix-repo-structure/SKILL.md`.
