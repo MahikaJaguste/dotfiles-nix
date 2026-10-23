@@ -25,6 +25,7 @@
       my.neovim.enable = lib.mkDefault true;
       my.lazygit.enable = lib.mkDefault true;
       my.worktrunk.enable = lib.mkDefault true;
+      my.direnv.enable = lib.mkDefault true;
     })
   ];
 }
