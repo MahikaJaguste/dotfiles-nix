@@ -42,6 +42,19 @@ nix flake update                                      # bump inputs
 
 Switch only when the user asks; build and report first.
 
+## Local workflow
+
+- **Worktrees.** Use `wt switch`; worktrees live at
+  `../<repo>.worktrees/<branch>`. Do not use `git worktree` directly, or
+  `wt merge` for atomic commits, unless the user asks.
+- **direnv.** `.envrc` only loads in interactive bash. For automated commands use
+  `direnv exec . <command>` or `nix develop`. Approvals are per worktree path;
+  never auto-approve an unfamiliar `.envrc`.
+- **Generated shell config.** Do not run `wt config shell install` or edit
+  `~/.bashrc`; Home Manager owns it.
+- **Git identity.** With `my.git.work.enable`, repositories under
+  `~/code/work` use the work identity and `github-work`. Keep commits atomic.
+
 ## Ground rules
 
 - Every file under `modules/` is a module. Do not add `imports` entries for it.

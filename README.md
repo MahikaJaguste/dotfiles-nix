@@ -10,8 +10,8 @@ Reproducible development environment for macOS and Linux, managed with
 | -------- | ------------------------------------------------------------ |
 | Terminal | Ghostty, tmux (Catppuccin Mocha), JetBrainsMono Nerd Font     |
 | Editor   | Neovim with LazyVim, Nix-managed plugins and language servers |
-| Shell    | bash with aliases, history and a git-aware prompt             |
-| Git      | git, gh, lazygit, aliases and Nix-managed SSH config           |
+| Shell    | bash with direnv, aliases, history and a git-aware prompt     |
+| Git      | git, gh, lazygit, worktrunk, aliases and Nix-managed SSH config |
 | CLI      | ripgrep, fd, fzf, eza, bat, jq, btop                          |
 
 ## Set up a new machine
