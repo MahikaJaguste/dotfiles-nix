@@ -124,6 +124,28 @@ in
                   sources = {
                     explorer = {
                       hidden = true,
+                      actions = {
+                        -- Open the row that was clicked. A mapped <LeftMouse> no
+                        -- longer moves the cursor itself, so move the list cursor
+                        -- first or confirm would act on the previous selection.
+                        explorer_click = function(picker)
+                          local list = picker.list
+                          local win = list.win.win
+                          local pos = vim.fn.getmousepos()
+                          local view = vim.api.nvim_win_call(win, vim.fn.winsaveview)
+                          list:_move(list:row2idx(pos.line - view.topline + 1), true, true)
+                          picker:action("confirm")
+                        end,
+                      },
+                      win = {
+                        list = {
+                          keys = {
+                            -- Neo-tree muscle memory: open the entry under the cursor.
+                            ["o"] = "confirm",
+                            ["<LeftMouse>"] = "explorer_click",
+                          },
+                        },
+                      },
                     },
                   },
                 },
