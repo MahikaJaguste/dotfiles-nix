@@ -20,6 +20,11 @@ in
         # Installed through modules/home/meta/fonts.nix. The "Mono" variant
         # keeps icon glyphs at a single cell width.
         font-family = config.my.font.mono;
+
+        # macOS Option types composed characters (Option-C is "ç"), so Alt
+        # chords never reach readline and fzf's Alt-C does nothing. Map the
+        # left Option to Alt and leave the right one for Unicode input.
+        "macos-option-as-alt" = "left";
       };
 
       enableBashIntegration = true;
