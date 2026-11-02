@@ -26,6 +26,7 @@
         tmux.enable = lib.mkDefault true;
         ghostty.enable = lib.mkDefault true;
         neovim.enable = lib.mkDefault true;
+        opencode.enable = lib.mkDefault true;
         lazygit.enable = lib.mkDefault true;
         worktrunk.enable = lib.mkDefault true;
         direnv.enable = lib.mkDefault true;
