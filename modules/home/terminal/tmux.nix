@@ -1,7 +1,7 @@
 { config, lib, pkgs, ... }:
 let
   isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
-  loginShell = "${pkgs.bashInteractive}/bin/bash";
+  loginShell = config.my.shell.path;
 
   # tmux-sensible sets default-command to
   # `reattach-to-user-namespace -l $SHELL` on macOS, where $SHELL is whatever
@@ -15,7 +15,45 @@ let
       loginShell;
 in
 {
-  options.my.tmux.enable = lib.mkEnableOption "tmux configuration";
+  options.my.tmux = {
+    enable = lib.mkEnableOption "tmux configuration";
+
+    windowStatusStyle = lib.mkOption {
+      description = "Catppuccin window status style.";
+      type = lib.types.enum [
+        "basic"
+        "rounded"
+        "slanted"
+        "custom"
+        "none"
+      ];
+      default = "rounded";
+    };
+
+    windowText = lib.mkOption {
+      description = "Text shown for inactive windows. Use #W for the window name or #T for the pane title.";
+      type = lib.types.str;
+      default = "#T";
+    };
+
+    windowCurrentText = lib.mkOption {
+      description = "Text shown for the current window. Use #W for the window name or #T for the pane title.";
+      type = lib.types.str;
+      default = "#T";
+    };
+
+    automaticRename = lib.mkOption {
+      description = "Let tmux rename windows from the running command.";
+      type = lib.types.bool;
+      default = true;
+    };
+
+    automaticRenameFormat = lib.mkOption {
+      description = "Format used by tmux automatic-rename.";
+      type = lib.types.str;
+      default = "#{?pane_in_mode,[tmux],#{pane_current_command}}#{?pane_dead,[dead],}";
+    };
+  };
 
   config = lib.mkIf config.my.tmux.enable {
     programs.tmux = {
@@ -62,8 +100,14 @@ in
             set -g @catppuccin_flavor "mocha"
 
             # Nerd Font icons and powerline separators. The font is installed
-            # through Home Manager and configured in Ghostty.
-            set -g @catppuccin_window_status_style "rounded"
+            # through Home Manager and configured in the terminal emulator.
+            set -g @catppuccin_window_status_style "${config.my.tmux.windowStatusStyle}"
+
+            # #T follows the pane title, which terminal shell integration
+            # updates. #W follows tmux's own window name and is more reliable
+            # over bare SSH, where no shell integration sets the pane title.
+            set -g @catppuccin_window_text "${config.my.tmux.windowText}"
+            set -g @catppuccin_window_current_text "${config.my.tmux.windowCurrentText}"
           '';
         }
       ];
@@ -75,9 +119,12 @@ in
         set-environment -g SHELL "${loginShell}"
         set -g default-command "${defaultCommand}"
 
-        # Ghostty supports 24-bit colour on both macOS and Linux, so enable it
-        # unconditionally. Reset first so repeated `prefix r` reloads do not
-        # append duplicate overrides.
+        set -g automatic-rename ${if config.my.tmux.automaticRename then "on" else "off"}
+        set -g automatic-rename-format "${config.my.tmux.automaticRenameFormat}"
+
+        # Ghostty and Windows Terminal both support 24-bit colour, so enable
+        # it unconditionally. Reset first so repeated `prefix r` reloads do
+        # not append duplicate overrides.
         set -gu terminal-overrides
         set -ga terminal-overrides ",*:Tc"
 
