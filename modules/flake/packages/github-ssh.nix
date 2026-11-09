@@ -4,8 +4,10 @@
     {
       packages.github-ssh = pkgs.writeShellApplication {
         name = "github-ssh";
-        # macOS ships an OpenSSH with Apple's UseKeychain option, so use the
-        # system client there instead of the upstream package from nixpkgs.
+        # Prefer the system OpenSSH at runtime. macOS has Apple's UseKeychain
+        # support there, and non-NixOS Linux needs the host client so account
+        # lookup can use NSS modules such as sssd. The Nix client is only a
+        # fallback for systems without /usr/bin/ssh.
         runtimeInputs = with pkgs; [
           coreutils
           gh
@@ -22,6 +24,8 @@
             --email EMAIL     Key comment. Default: mahika.for.me@gmail.com
             --title TITLE     GitHub key title. Default: "<hostname> <key name>"
             --account USER    Add the key with this gh account. Default: active account.
+            --ssh-host HOST   Verify against this SSH host. Default: github.com
+            --ssh-port PORT   Verify against this SSH port.
             --no-verify       Skip the final ssh authentication check.
             -h, --help        Show this help.
           EOF
@@ -31,7 +35,16 @@
           email=mahika.for.me@gmail.com
           title=
           account=
+          ssh_host=github.com
+          ssh_port=
           verify=1
+
+          ssh_bin=ssh
+          ssh_keygen_bin=ssh-keygen
+          if [[ -x /usr/bin/ssh && -x /usr/bin/ssh-keygen ]]; then
+            ssh_bin=/usr/bin/ssh
+            ssh_keygen_bin=/usr/bin/ssh-keygen
+          fi
 
           while [[ $# -gt 0 ]]; do
             case "$1" in
@@ -49,6 +62,14 @@
                 ;;
               --account)
                 account="''${2:?--account needs a value}"
+                shift 2
+                ;;
+              --ssh-host)
+                ssh_host="''${2:?--ssh-host needs a value}"
+                shift 2
+                ;;
+              --ssh-port)
+                ssh_port="''${2:?--ssh-port needs a value}"
                 shift 2
                 ;;
               --no-verify)
@@ -81,9 +102,9 @@
           chmod 700 "$(dirname "$key")"
 
           if [[ ! -f "$key" ]]; then
-            ssh-keygen -t ed25519 -a 100 -C "$email" -f "$key"
+            "$ssh_keygen_bin" -t ed25519 -a 100 -C "$email" -f "$key"
           elif [[ ! -f "$key.pub" ]]; then
-            ssh-keygen -y -f "$key" >"$key.pub"
+            "$ssh_keygen_bin" -y -f "$key" >"$key.pub"
             chmod 644 "$key.pub"
           fi
 
@@ -94,7 +115,7 @@
           fi
 
           echo "Key: $key"
-          echo "Fingerprint: $(ssh-keygen -lf "$key.pub")"
+          echo "Fingerprint: $("$ssh_keygen_bin" -lf "$key.pub")"
 
           if [[ -n "$account" ]]; then
             if ! token="$(gh auth token -h github.com -u "$account")"; then
@@ -124,8 +145,23 @@
           if [[ "$verify" -eq 1 ]]; then
             echo
             echo "Testing SSH authentication..."
-            ssh -i "$key" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-              -o ConnectTimeout=10 -T git@github.com || true
+            verify_opts=(
+              -i "$key"
+              -o IdentitiesOnly=yes
+              -o StrictHostKeyChecking=accept-new
+              -o ConnectTimeout=10
+            )
+            if [[ -n "$ssh_port" ]]; then
+              verify_opts+=(-p "$ssh_port")
+            fi
+            output="$("$ssh_bin" "''${verify_opts[@]}" -T "git@$ssh_host" 2>&1 || true)"
+            printf '%s\n' "$output"
+            if [[ "$output" != *"successfully authenticated"* ]]; then
+              echo >&2
+              echo "SSH verification did not succeed. If this network blocks SSH" >&2
+              echo "to GitHub, use HTTPS instead:" >&2
+              echo "  gh auth login -p https && gh auth setup-git" >&2
+            fi
           fi
         '';
       };
