@@ -23,6 +23,16 @@ in
         type = lib.types.str;
         default = "~/.ssh/id_ed25519";
       };
+      sshHostName = lib.mkOption {
+        description = "Real hostname behind the github.com SSH alias.";
+        type = lib.types.str;
+        default = "github.com";
+      };
+      sshPort = lib.mkOption {
+        description = "Port used for the github.com SSH alias. Set to 443 with ssh.github.com on networks that block port 22.";
+        type = lib.types.port;
+        default = 22;
+      };
     };
 
     work = {
@@ -57,6 +67,11 @@ in
         description = "Optional SSH certificate for the work identity.";
         type = lib.types.nullOr lib.types.str;
         default = null;
+      };
+      urlRewrite = lib.mkOption {
+        description = "Rewrite git@github.com URLs to the work SSH alias. Disable on networks that block SSH to GitHub and use HTTPS instead.";
+        type = lib.types.bool;
+        default = true;
       };
       directory = lib.mkOption {
         description = "Directory whose repositories use the work identity.";
@@ -97,9 +112,10 @@ in
         contents = {
           user.name = cfg.work.userName;
           user.email = cfg.work.userEmail;
-
+        } // lib.optionalAttrs cfg.work.urlRewrite {
           # Rewrite only GitHub URLs. Other work hosts, such as an internal
           # repo-243 alias with certificate auth, keep their own SSH config.
+          # Disable urlRewrite where the network blocks SSH to GitHub.
           url."git@${cfg.work.sshHost}:".insteadOf = "git@${cfg.work.hostName}:";
         };
       };
@@ -109,6 +125,12 @@ in
     # managed by Nix. Only the client config is declarative.
     programs.ssh = {
       enable = true;
+
+      # Use the system OpenSSH. Nix OpenSSH links Nix glibc and cannot load
+      # host NSS modules (sssd/LDAP), so on non-NixOS Linux it cannot resolve
+      # the account. macOS also wants the system client for UseKeychain.
+      package = lib.mkDefault null;
+
       enableDefaultConfig = false;
 
       # Machine-specific hosts can stay out of Nix, for example a work alias
@@ -124,10 +146,12 @@ in
         };
 
         "github.com" = {
-          HostName = "github.com";
+          HostName = cfg.personal.sshHostName;
           User = "git";
           IdentityFile = cfg.personal.sshKey;
           IdentitiesOnly = true;
+        } // lib.optionalAttrs (cfg.personal.sshPort != 22) {
+          Port = cfg.personal.sshPort;
         };
       } // lib.optionalAttrs cfg.work.enable {
         "${cfg.work.sshHost}" = {
