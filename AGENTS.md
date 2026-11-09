@@ -55,13 +55,18 @@ Switch only when the user asks; build and report first.
 - **Generated shell config.** Do not run `wt config shell install` or edit
   `~/.bashrc`; Home Manager owns it.
 - **Git identity.** With `my.git.work.enable`, repositories under
-  `~/code/work` use the work identity and `github-work`. Keep commits atomic.
+  `~/code/work` use the work identity and `github-work`. Set
+  `my.git.work.urlRewrite = false` to keep GitHub URLs on HTTPS instead.
+  Keep commits atomic.
 
 ## Ground rules
 
 - Every file under `modules/` is a module. Do not add `imports` entries for it.
 - Features gate themselves on `options.my.<feature>.enable` with `lib.mkIf`.
 - Share data through options, not `import ./other.nix`.
+- Cross-cutting host values (for example the tmux shell path and the locale
+  archive) are options in `modules/home/meta/`; feature modules consume them
+  instead of hardcoding them.
 - Stage new files (`git add`) before evaluating — flakes ignore untracked paths.
 - Do not bump `home.stateVersion` or add plaintext secrets as part of other work.
 - Keep docs honest: README is a short, command-first runbook for humans; the

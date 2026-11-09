@@ -72,7 +72,9 @@ options change; discover the current state with the commands under
 ```
 
 Option naming: `my.<camelCaseFeature>.enable`; nested values use dotted options
-(`my.font.mono`). Give new options a `description`.
+(`my.font.mono`). Give new options a `description`. Value-only modules in
+`modules/home/meta/` may declare just the option (for example `my.shell.path`);
+they do not need a `my.<feature>.enable` flag.
 
 ## Where things go
 
@@ -126,9 +128,11 @@ module at the flake boundary and include it in the exported bundle.
 `flake.homeModules.default` from `modules/flake/`. Include external Home
 Manager modules in that bundle so consumers do not need to pass special
 arguments, and have `mkHome` consume the same bundle. A consumer imports
-`inputs.<name>.homeModules.default`, sets
-`my.profile`, and overrides feature flags or `home.stateVersion` with normal
-definitions; those defaults are `lib.mkDefault` here. It must still set
+`inputs.<name>.homeModules.default`, sets `my.profile`, and overrides feature
+flags, host-specific values such as `my.shell.path` and
+`my.locale.nixArchive.enable`, or `home.stateVersion` with normal definitions.
+Feature defaults here use `lib.mkDefault`; value options in
+`modules/home/meta/` have overridable defaults. It must still set
 `home.username` and `home.homeDirectory`. Do not import
 `modules/flake/hosts/default.nix` from the consumer — that would create this
 flake's personal hosts there.
@@ -163,7 +167,8 @@ Apply only when the user asks: `... switch --flake .#<host>`.
 - New files are invisible to flakes until `git add`ed.
 - Every home module is imported by every host. A platform-specific package or
   reference at module top level breaks evaluation on other systems; keep it
-  inside `mkIf`/`optionals`.
+  inside `mkIf`/`optionals`. For example, `pkgs.glibcLocales` exists only on
+  Linux, so reference it inside a Linux-guarded `lib.mkIf`.
 - `nix flake check` skips non-current systems unless `--all-systems` is passed.
 - Infinite recursion usually means a module reads its own
   `config.my.<feature>.enable` while computing an option value; read `config`
@@ -188,7 +193,8 @@ Apply only when the user asks: `... switch --flake .#<host>`.
 
 ```bash
 find modules -name '*.nix' | sort          # modules present
-rg 'mkEnableOption' modules/home           # features and their flags
+rg 'mkEnableOption' modules/home           # feature flags
+rg 'options\.my\.' modules/home            # all my.* options, including values
 rg 'my\.' modules/flake                    # host wiring
 nix eval .#homeConfigurations.<host>.config.my --json
 nix flake show                             # hosts and outputs
