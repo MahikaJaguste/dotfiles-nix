@@ -25,6 +25,11 @@ in
         # chords never reach readline and fzf's Alt-C does nothing. Map the
         # left Option to Alt and leave the right one for Unicode input.
         "macos-option-as-alt" = "left";
+
+        # When SSHing from the Mac, install Ghostty's terminfo on the remote
+        # host and fall back to xterm-256color when that is not possible. The
+        # work VM is reached from Windows, so it is unaffected by this.
+        "shell-integration-features" = "cursor,path,title,ssh-env,ssh-terminfo";
       };
 
       enableBashIntegration = true;
