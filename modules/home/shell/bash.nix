@@ -1,4 +1,12 @@
 { config, lib, ... }:
+let
+  # Home Manager installs packages (git, tmux, ...) into this profile. On
+  # macOS the system /etc/profile runs path_helper, which puts /usr/bin and
+  # friends ahead of it on every login shell; tmux panes are login shells and
+  # a long-lived tmux server may also pass down an older PATH. Move the
+  # profile back to the front so interactive shells use the pinned Nix tools.
+  profileBin = "${config.home.profileDirectory}/bin";
+in
 {
   options.my.bash.enable = lib.mkEnableOption "bash configuration";
 
@@ -51,6 +59,22 @@
       # A concrete collation avoids the warning without forcing a language.
       bashrcExtra = ''
         export LC_COLLATE=C
+
+        # Put the Home Manager profile first, removing an earlier occurrence
+        # so nested shells do not accumulate duplicates. This runs from
+        # ~/.bashrc, which login shells reach through ~/.bash_profile, so it
+        # applies after path_helper and regardless of stale variables inherited
+        # from a long-running tmux server.
+        __hm_profile_bin="${profileBin}"
+        if [[ ":$PATH:" == *":$__hm_profile_bin:"* ]]; then
+          PATH=":''${PATH}:"
+          PATH="''${PATH//:$__hm_profile_bin:/:}"
+          PATH="''${PATH#:}"
+          PATH="''${PATH%:}"
+        fi
+        PATH="$__hm_profile_bin''${PATH:+:$PATH}"
+        export PATH
+        unset __hm_profile_bin
       '';
 
       initExtra = ''
